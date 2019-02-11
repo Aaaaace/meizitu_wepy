@@ -1,0 +1,42 @@
+<template>
+  <web-view wx:if="{{ urlResolve }}" src="{{ url }}" binderror="onUrlReject"/>
+  <view  wx:if="{{ !urlResolve }}">
+    <htmlParser :parserContent.sync='rawPageData'/>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+// import WxParse from '../utils/plugins/wxParse/wxParse.js'
+import HtmlParser from '../components/htmlparser'
+
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: '闲读'
+  }
+  data = {
+    urlResolve: true,
+    rawPageData: '',
+    url: ''
+  }
+  components = {
+    htmlParser: HtmlParser
+  }
+  methods = {
+    onUrlReject() {
+      console.log('Url request rejected')
+      let self = this
+      self.urlResolve = false
+      self.rawPageData = wx.getStorageSync('xiandu_detail')
+      self.$apply()
+    }
+  }
+  onLoad(options) {
+    let self = this
+    self.url = options.url
+  }
+}
+</script>
+<style>
+@import '../utils/plugins/wxParse/wxParse.wxss';
+</style>

@@ -1,0 +1,119 @@
+<!--新闻列表-->
+<template>
+  <scroll-view class="newslist" scroll-y="true">
+    <repeat for="{{ newsItems }}" key="index" index="index" item="item">
+      <view class="newsitem" data-id="{{ item.id }}" bindtap='onNewsItemTap'>
+        <view class="newsitem_bd">
+          <image 
+            class="newsitem_cover"
+            wx:if="{{ item.cover != 'none' }}"
+            src="{{ item.cover }}"
+            style='width:40%;height:100%;margin-right:15rpx;'
+            mode="aspectFill" />
+          <view class="newsitem_text">
+            <view class="newsitem_title">{{ item.title }}</view>
+            <view class="newsitem_post-time">{{ item.published_at }}</view>
+          </view>
+        </view>
+      </view>
+    </repeat>
+    <view class="tips">
+      <image src="../images/loading.gif" style='width:42rpx;height:42rpx;'/>
+      <text style='font-size:36rpx;color:#888'>加载中...</text>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+import wepy from 'wepy'
+
+export default class NewsList extends wepy.component {
+  props = {
+    newsItems: {
+      type: Object,
+      default: [],
+      twoWay: true
+    }
+  }
+  methods = {
+    onNewsItemTap(event) {
+      let self = this
+      let id = event.currentTarget.dataset.id
+      var url = ''
+      for (let i = 0, len = self.$parent.xianduItems.length; i < len; i++) {
+        if (self.$parent.xianduItems[i].id === id) {
+          try {
+            let dataProc = self.$parent.xianduItems[i].raw.replace(/"/g, '#&&#')
+            dataProc = dataProc.replace(/'/g, '"')
+            dataProc = dataProc.replace(/#&&#/g, "'")
+            dataProc = dataProc.replace(/ True/, '"TRUE"')
+            dataProc = dataProc.replace(/ False/, '"FALSE"')
+            let ob = JSON.parse(dataProc)
+            wx.setStorageSync('xiandu_detail', ob.summary.content)
+          } catch (e) {
+            console.warn(e)
+          }
+          url = self.$parent.xianduItems[i].url
+          // wx.setStorageSync('xiandu_detail_url', self.$parent.xianduItems[i].url)
+          break
+        }
+      }
+      wx.navigateTo({
+        url: '/pages/news_detail?url=' + url
+      })
+    }
+  }
+  onLoad() {
+    // console.log(typeof this.newsItems)
+  }
+}
+</script>
+
+<style>
+.newslist {
+  height: 100%;
+  width: 100%;
+}
+.newsitem {
+  width: 100%;
+}
+.newslist .tips {
+  text-align: center;
+}
+.newslist .newsitem .newsitem_bd {
+  padding: 20rpx;
+  height: 200rpx;
+  background-color: #fff;
+  border-bottom: 3rpx solid #eee;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-box-flex: 0;
+  -webkit-flex: 0;
+  flex: 0;
+}
+.newslist .newsitem_bd .newsitem_text {
+  width: 100%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+}
+.newslist .newsitem_bd .newsitem_text .newsitem_title {
+  width: 100%;
+  overflow: hidden;
+  text-align: left;
+  margin-bottom: 10rpx;
+  font-size: 36rpx;
+}
+.newslist .newsitem_bd .newsitem_text .newsitem_post-time {
+  width: 100%;
+  overflow: hidden;
+  text-align: right;
+  font-size: 28rpx;
+  color: #bbb;
+}
+</style>

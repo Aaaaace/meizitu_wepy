@@ -1,0 +1,168 @@
+<template>
+    <scroll-view class="container">
+        <!--妹子图格-->
+        <view
+            id="meizi-{{ id }}"
+            class="cell"
+            wx:for="{{ items }}"
+            wx:key="id"
+            wx:for-index="id">
+            <image
+                class="cell-img"
+                src="{{ item.url }}"
+                mode="aspectFill"
+                @tap="onItemTap"
+                data-url="{{ item.url }}"/>
+            <view>
+                
+            </view>
+        </view>
+        <!--一键保存按钮-->
+        <button class="hover-button">存</button>
+    </scroll-view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import api from '../utils/api'
+
+export default class extends wepy.page {
+  config = {
+    navigationBarTitleText: '妹子'
+  }
+  data = {
+    items: [],
+    currentPage: 0,
+    savedImgNum: 0
+  }
+  methods = {
+    onItemTap(event) {
+      // console.log("tap")
+      if (event.currentTarget.dataset.url == null) { return }
+      let self = this
+      let tempUrls = self.data.items.map(item => item['url'])
+      let tapedItemId = parseInt(event.currentTarget.id)
+      let endId = tempUrls.length - tapedItemId > 20 ? 20 + tapedItemId : tempUrls.length
+      let startId = tapedItemId > 10 ? tapedItemId - 10 : 0
+      let targetUrls = tempUrls.slice(startId, endId)  // 将要预览的图片集的urls
+      // 进入图片预览
+      wx.previewImage({
+        current: event.currentTarget.dataset.url,
+        urls: targetUrls
+      })
+    }
+  }
+  // 加载妹子图
+  loadMoreMeizi() {
+    let self = this
+    console.log('loadMoreMeizi: page' + (self.currentPage + 1))
+    let targetPage = ++self.currentPage
+    let tempItems = self.items
+    wepy.request(api.GET_MEIZI_URL + targetPage)
+    .then(function(res) {
+      if (
+          res == null ||
+          res.data == null ||
+          res.data.results == null ||
+          res.data.results.length <= 0
+        ) {
+        console.log('cant get meizi')
+        return
+      }
+      // console.log(tempItems)
+      for (var i = 0; i < res.data.results.length; i++) {
+        tempItems.push({
+          url: res.data.results[i].url,
+          postTime: res.data.results[i].publishedAt.split('T')[0],
+          host: res.data.results[i].who
+        })
+      }
+      // self.items = tempItems  // 会失效
+      self.setData({
+        items: tempItems
+      })
+    })
+    .catch(function(error) {
+      console.log(error)
+    })
+  }
+  onLoad() {
+    console.log('onLoad')
+    wx.showToast({
+      title: '加载中...',
+      icon: 'loading',
+      mask: true,
+      duration: 500
+    })
+    this.loadMoreMeizi()
+  }
+  onReachBottom() {
+    console.log('onReachBottom')
+    wx.showToast({
+      title: '加载中...',
+      icon: 'loading',
+      mask: true,
+      duration: 500
+    })
+    this.loadMoreMeizi()
+  }
+  onPullDownRefresh() {
+    let self = this
+    self.items = []
+    self.currentPage = 0
+    wx.showToast({
+      title: '加载中...',
+      icon: 'loading',
+      mask: true,
+      duration: 500
+    })
+    self.loadMoreMeizi()
+  }
+}
+</script>
+
+<style>
+.container {
+  width: 100%;
+  padding: 5rpx 5rpx;
+}
+mask{
+  width: 100%;
+  height: 100%;
+}
+.cell_deprecated {
+  width: 90%;
+  font-size: 32rpx;
+  border-radius: 10rpx;
+  box-shadow: 0rpx 8rpx 2rpx 4rpx #ddd;
+  margin: 20rpx auto;
+  padding: 4rpx;
+  text-align: center;
+}
+.cell {
+  width: 50%;
+  font-size: 0;
+  float: left;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 5rpx;
+}
+.cell-img {
+  width: 100%;                                                       
+  height: 340rpx;
+  display: block;
+}
+.hover-button {
+  position: fixed;
+  bottom: 40rpx;
+  left: 40rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50rpx;
+  border: 10rpx solid rgb(204, 204, 204);
+  background: #fff;
+  padding: 10rpx;
+  opacity: 0.7;
+  text-align: center;
+}
+</style>
